@@ -1,0 +1,26 @@
++51 975 370 622
+Identificador del número de teléfono: 900644449809893
+Identificador de la cuenta de WhatsApp Business: 1396014558241840
+
+
+
+Número de prueba: +1 555 176 7726
+Identificador del número de teléfono: 921579177716397
+Identificador de la cuenta de WhatsApp Business: 2698983627101206
+
+
+TOKEN PERMANENTE: ******
+
+
+Identificador de la aplicacion: 1549065196397352
+Clave secreta de la aplicacion: 8c394a9fb47a5d13539eda4c98b6c725
+
+
+
+
+EAAWA3djD4ygBQg3rvgSaBrhJ281dIJVrMpKSM9yUKcjEmR9HpxTh94x0GZCToZA7dXR3F5WyeBX7YrtKckZCgriWYR2ZBsaEpPUV9lu1NKTz9NfVEGcOihVM8z1Bu9cKzy5k0ZBEWuaC3XJHVrHFp7qJZABQOGZAJIZCNOCj0lj7NkL9FdnykspvdQYV38v2zOepRgZDZD
+EAAWA3djD4ygBQuxgoJPwJCkf2qeecUsY7vZCWGylGTYlHSpigES4V7cQ9Dsr8XF6TQ87GqNOWLPgDpT5OHIKhZBqrgqo2emJpF21NOY4OKmZAjsBZAZARAtMZA5fiUTQhdJmT1wxlCU0wSoQrRTkqNFd0m6ZAjv6vsJi8jvm5k8LJ2DdjKcSituyMzCzsXfAJkwNwZDZD
+
+EAAWA3djD4ygBQpFbXQOHQ8c48NyIrhSkWXZC8r3X0EmbaXcpIGUK0EnbujKFDb0rCj4ZBZCoBCPKIxuvO0T5o8fZCvXc6kLeUN1vNZAaibQEEAjZCECRn0jwwPUmiXRDgB6eUJb1TJ7GMlTZAMu7WqFekFSVC8zcXddXKjvXazKMfhUzTTOAcxaQMDzL8TMVZAFgZCQZDZD
+
+cd C:\Users\Publicity\Desktop\PROYECTO BOOT WHATSAPP\bot_api
