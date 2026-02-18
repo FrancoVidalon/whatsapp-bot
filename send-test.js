@@ -5,7 +5,7 @@ const url = `https://graph.facebook.com/v24.0/${process.env.PHONE_NUMBER_ID}/mes
 
 const data = {
   messaging_product: "whatsapp",
-  to: "51998467755",
+  to: "51912258346",
   type: "template",
   template: {
     name: "recuperaciones",
