@@ -1,28 +1,29 @@
-require("dotenv").config();
-const express = require("express");
-const mysql = require("mysql2/promise");
+import express from "express";
+import dotenv from "dotenv";
+import mysql from "mysql2/promise";
+
+dotenv.config();
 
 const app = express();
 app.use(express.json());
 
-/* =========================
-   CONEXIÓN MYSQL RAILWAY
-========================= */
-const db = mysql.createPool({
-  host: process.env.MYSQLHOST,
-  user: process.env.MYSQLUSER,
-  password: process.env.MYSQLPASSWORD,
-  database: process.env.MYSQL_DATABASE,
-  port: process.env.MYSQLPORT,
-  ssl: {
-    rejectUnauthorized: false
-  }
+// =============================
+// 🔌 CONEXIÓN A MYSQL RAILWAY
+// =============================
+const db = await mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT
 });
 
-/* =========================
-   VERIFICACIÓN WEBHOOK
-========================= */
+// =============================
+// ✅ VERIFICACIÓN WEBHOOK (GET)
+// =============================
 app.get("/webhook", (req, res) => {
+  console.log("Query recibida:", req.query);
+
   const verify_token = process.env.VERIFY_TOKEN;
 
   const mode = req.query["hub.mode"];
@@ -34,16 +35,21 @@ app.get("/webhook", (req, res) => {
       console.log("Webhook verificado correctamente");
       return res.status(200).send(challenge);
     } else {
+      console.log("Token incorrecto");
       return res.sendStatus(403);
     }
   }
+
+  res.sendStatus(400);
 });
 
-/* =========================
-   RECIBIR MENSAJES
-========================= */
+// =============================
+// 📩 RECIBIR MENSAJES (POST)
+// =============================
 app.post("/webhook", async (req, res) => {
   try {
+    console.log("Body recibido:", JSON.stringify(req.body, null, 2));
+
     const entry = req.body.entry?.[0];
     const changes = entry?.changes?.[0];
     const value = changes?.value;
@@ -58,14 +64,12 @@ app.post("/webhook", async (req, res) => {
 
     console.log("Mensaje recibido:", numero, texto);
 
-    // 🔥 Guardar en Railway
     await db.execute(
       `INSERT INTO mensajes_queue (numero, mensaje, tipo)
        VALUES (?, ?, 'recibido')`,
       [numero, texto]
     );
 
-    // ⚡ Responder rápido a Meta
     res.sendStatus(200);
 
   } catch (error) {
@@ -74,10 +78,12 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
-/* =========================
-   PUERTO
-========================= */
+// =============================
+// 🚀 INICIAR SERVIDOR
+// =============================
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
 });
+
