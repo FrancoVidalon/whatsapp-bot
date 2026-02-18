@@ -10,13 +10,25 @@ app.use(express.json());
 // =============================
 // 🔌 CONEXIÓN A MYSQL RAILWAY
 // =============================
-const db = await mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT
-});
+let db;
+
+async function conectarDB() {
+  try {
+    db = await mysql.createConnection({
+      host: process.env.MYSQLHOST,
+      user: process.env.MYSQLUSER,
+      password: process.env.MYSQLPASSWORD,
+      database: process.env.MYSQLDATABASE,
+      port: process.env.MYSQLPORT
+    });
+
+    console.log("Base de datos conectada");
+  } catch (error) {
+    console.error("Error conectando DB:", error);
+  }
+}
+
+conectarDB();
 
 // =============================
 // ✅ VERIFICACIÓN WEBHOOK (GET)
