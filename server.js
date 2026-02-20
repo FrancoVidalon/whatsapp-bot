@@ -8,27 +8,22 @@ const app = express();
 app.use(express.json());
 
 // =============================
-// 🔌 CONEXIÓN A MYSQL RAILWAY
+// 🔌 CONEXIÓN A MYSQL RAILWAY (POOL)
 // =============================
-let db;
+import mysql from "mysql2/promise";
 
-async function conectarDB() {
-  try {
-    db = await mysql.createConnection({
-      host: process.env.MYSQLHOST,
-      user: process.env.MYSQLUSER,
-      password: process.env.MYSQLPASSWORD,
-      database: process.env.MYSQLDATABASE,
-      port: process.env.MYSQLPORT
-    });
+const db = mysql.createPool({
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
-    console.log("Base de datos conectada");
-  } catch (error) {
-    console.error("Error conectando DB:", error);
-  }
-}
-
-conectarDB();
+console.log("Pool de base de datos listo");
 
 // =============================
 // ✅ VERIFICACIÓN WEBHOOK (GET)
