@@ -7,33 +7,26 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-// =============================
-// 🔌 CONEXIÓN A MYSQL RAILWAY
-// =============================
-let db;
+/* =====================================================
+   🔌 CONEXIÓN A MYSQL RAILWAY (POOL - PRODUCCIÓN)
+===================================================== */
+const db = mysql.createPool({
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
-async function conectarDB() {
-  try {
-    db = await mysql.createConnection({
-      host: process.env.MYSQLHOST,
-      user: process.env.MYSQLUSER,
-      password: process.env.MYSQLPASSWORD,
-      database: process.env.MYSQLDATABASE,
-      port: process.env.MYSQLPORT
-    });
-
-    console.log("Base de datos conectada");
-  } catch (error) {
-    console.error("Error conectando DB:", error);
-  }
-}
-
-conectarDB();
+console.log("✅ Pool de base de datos listo");
 
 
-// =============================
-// ✅ VERIFICACIÓN WEBHOOK (GET)
-// =============================
+/* =====================================================
+   ✅ VERIFICACIÓN WEBHOOK (GET)
+===================================================== */
 app.get("/webhook", (req, res) => {
   console.log("Query recibida:", req.query);
 
@@ -45,10 +38,10 @@ app.get("/webhook", (req, res) => {
 
   if (mode && token) {
     if (mode === "subscribe" && token === verify_token) {
-      console.log("Webhook verificado correctamente");
+      console.log("✅ Webhook verificado correctamente");
       return res.status(200).send(challenge);
     } else {
-      console.log("Token incorrecto");
+      console.log("❌ Token incorrecto");
       return res.sendStatus(403);
     }
   }
@@ -56,9 +49,10 @@ app.get("/webhook", (req, res) => {
   res.sendStatus(400);
 });
 
-// =============================
-// 📩 RECIBIR MENSAJES (POST)
-// =============================
+
+/* =====================================================
+   📩 RECIBIR MENSAJES (POST)
+===================================================== */
 app.post("/webhook", async (req, res) => {
   try {
     console.log("Body recibido:", JSON.stringify(req.body, null, 2));
@@ -75,7 +69,7 @@ app.post("/webhook", async (req, res) => {
     const numero = message.from;
     const texto = message.text?.body || "";
 
-    console.log("Mensaje recibido:", numero, texto);
+    console.log("📩 Mensaje recibido:", numero, texto);
 
     await db.execute(
       `INSERT INTO mensajes_queue (numero, mensaje, tipo)
@@ -83,19 +77,34 @@ app.post("/webhook", async (req, res) => {
       [numero, texto]
     );
 
+    console.log("💾 Mensaje guardado en BD");
+
     res.sendStatus(200);
 
   } catch (error) {
-    console.error("Error en webhook:", error);
+    console.error("❌ Error en webhook:", error);
     res.sendStatus(500);
   }
 });
 
-// =============================
-// 🚀 INICIAR SERVIDOR
-// =============================
+
+/* =====================================================
+   🛡️ MANEJO GLOBAL DE ERRORES
+===================================================== */
+process.on("unhandledRejection", (err) => {
+  console.error("🔥 Unhandled Rejection:", err);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("🔥 Uncaught Exception:", err);
+});
+
+
+/* =====================================================
+   🚀 INICIAR SERVIDOR
+===================================================== */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Servidor corriendo en puerto", PORT);
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
