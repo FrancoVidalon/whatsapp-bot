@@ -23,35 +23,28 @@ const db = mysql.createPool({
 
 console.log("✅ Pool de base de datos listo");
 
-
 /* =====================================================
    ✅ VERIFICACIÓN WEBHOOK (GET)
 ===================================================== */
 app.get("/webhook", (req, res) => {
-  console.log("Query recibida:", req.query);
-
-  const verify_token = process.env.VERIFY_TOKEN;
-
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
+  const verify_token = process.env.VERIFY_TOKEN;
 
-  if (mode && token) {
-    if (mode === "subscribe" && token === verify_token) {
-      console.log("✅ Webhook verificado correctamente");
-      return res.status(200).send(challenge);
-    } else {
-      console.log("❌ Token incorrecto");
-      return res.sendStatus(403);
-    }
+  console.log("Query recibida:", req.query);
+
+  if (mode && token && mode === "subscribe" && token === verify_token) {
+    console.log("✅ Webhook verificado correctamente");
+    return res.status(200).send(challenge);
   }
 
-  res.sendStatus(400);
+  console.log("❌ Webhook GET inválido");
+  res.sendStatus(403);
 });
 
-
 /* =====================================================
-   📩 RECIBIR MENSAJES (POST)
+   📩 WEBHOOK POST - MENSAJES Y STATUS
 ===================================================== */
 app.post("/webhook", async (req, res) => {
   try {
@@ -60,24 +53,53 @@ app.post("/webhook", async (req, res) => {
     const entry = req.body.entry?.[0];
     const changes = entry?.changes?.[0];
     const value = changes?.value;
-    const message = value?.messages?.[0];
 
-    if (!message) {
+    if (!value) return res.sendStatus(200);
+
+    // -----------------------------
+    // 📦 Status de mensajes enviados
+    // -----------------------------
+    if (value.statuses) {
+      for (const statusData of value.statuses) {
+        const message_id = statusData.id;
+        const numero = statusData.recipient_id;
+        const estado = statusData.status;           // sent, delivered, read, failed
+        const category = statusData.category || null;
+
+        console.log("📦 Status recibido:", { message_id, numero, estado, category });
+
+        // Insertar o actualizar en tabla mensajes_status
+        await db.execute(
+          `INSERT INTO mensajes_status (message_id, numero, estado, category)
+           VALUES (?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE estado = VALUES(estado), category = VALUES(category)`,
+          [message_id, numero, estado, category]
+        );
+
+        console.log("💾 Status guardado en mensajes_status");
+      }
       return res.sendStatus(200);
     }
 
-    const numero = message.from;
-    const texto = message.text?.body || "";
+    // -----------------------------
+    // 📩 Mensajes entrantes
+    // -----------------------------
+    const message = value.messages?.[0];
+    if (message) {
+      const numero = message.from;
+      const texto = message.text?.body || "";
 
-    console.log("📩 Mensaje recibido:", numero, texto);
+      console.log("📩 Mensaje entrante:", numero, texto);
 
-    await db.execute(
-      `INSERT INTO mensajes_queue (numero, mensaje, tipo)
-       VALUES (?, ?, 'recibido')`,
-      [numero, texto]
-    );
+      // Guardar en mensajes_queue
+      await db.execute(
+        `INSERT INTO mensajes_queue (numero, mensaje, tipo, procesado, fecha)
+         VALUES (?, ?, 'recibido', 0, NOW())`,
+        [numero, texto]
+      );
 
-    console.log("💾 Mensaje guardado en BD");
+      console.log("💾 Mensaje guardado en mensajes_queue");
+    }
 
     res.sendStatus(200);
 
@@ -86,7 +108,6 @@ app.post("/webhook", async (req, res) => {
     res.sendStatus(500);
   }
 });
-
 
 /* =====================================================
    🛡️ MANEJO GLOBAL DE ERRORES
@@ -98,7 +119,6 @@ process.on("unhandledRejection", (err) => {
 process.on("uncaughtException", (err) => {
   console.error("🔥 Uncaught Exception:", err);
 });
-
 
 /* =====================================================
    🚀 INICIAR SERVIDOR
