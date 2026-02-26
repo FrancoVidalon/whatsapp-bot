@@ -56,30 +56,52 @@ app.post("/webhook", async (req, res) => {
 
     if (!value) return res.sendStatus(200);
 
-    // -----------------------------
-    // 📦 Status de mensajes enviados
-    // -----------------------------
-    if (value.statuses) {
-      for (const statusData of value.statuses) {
-        const message_id = statusData.id;
-        const numero = statusData.recipient_id;
-        const estado = statusData.status;           // sent, delivered, read, failed
-        const category = statusData.category || null;
-
-        console.log("📦 Status recibido:", { message_id, numero, estado, category });
-
-        // Insertar o actualizar en tabla mensajes_status
-        await db.execute(
-          `INSERT INTO mensajes_status (message_id, numero, estado, category)
-           VALUES (?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE estado = VALUES(estado), category = VALUES(category)`,
-          [message_id, numero, estado, category]
-        );
-
-        console.log("💾 Status guardado en mensajes_status");
-      }
-      return res.sendStatus(200);
-    }
+   // -----------------------------
+   // 📦 Status de mensajes enviados
+   // -----------------------------
+   if (value.statuses) {
+     for (const statusData of value.statuses) {
+   
+       const message_id = statusData.id;
+       const numero = statusData.recipient_id;
+       const estado = statusData.status; // sent, delivered, read, failed
+       const timestamp = statusData.timestamp || null;
+   
+       // Pricing info (cuando viene)
+       const categoria = statusData.pricing?.category || null;
+       const tipo = statusData.pricing?.type || null;
+       const modelo_precios = statusData.pricing?.pricing_model || null;
+       const facturable = statusData.pricing?.billable ?? null;
+   
+       console.log("📦 Status recibido:", {
+         message_id,
+         numero,
+         estado,
+         categoria,
+         tipo
+       });
+   
+       await db.execute(
+         `INSERT INTO mensajes_status 
+         (message_id, numero, estado, categoria, tipo, modelo_precios, facturable, timestamp_evento, fecha_registro)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+         [
+           message_id,
+           numero,
+           estado,
+           categoria,
+           tipo,
+           modelo_precios,
+           facturable,
+           timestamp
+         ]
+       );
+   
+       console.log("💾 Evento guardado en mensajes_status");
+     }
+   
+     return res.sendStatus(200);
+   }
 
     // -----------------------------
     // 📩 Mensajes entrantes
